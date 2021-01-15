@@ -22,6 +22,8 @@ var (
 	eurekaPath = "/eureka/apps/"
 	// local eureka url
 	discoveryServerUrl = "http://127.0.0.1:8761"
+	userName           string
+	password           string
 )
 
 // RegisterClient register this app at the Eureka server
@@ -32,6 +34,8 @@ var (
 func RegisterClient(eurekaUrl string, localip string, appName string, port string, securePort string, username string, pwd string) {
 	eurekaUrl = strings.Trim(eurekaUrl, "/")
 	discoveryServerUrl = eurekaUrl
+	userName = username
+	password = pwd
 	RegisterLocal(appName, localip, port, securePort, username, pwd)
 }
 
@@ -86,6 +90,8 @@ func GetServiceInstances(appName string) ([]Instance, error) {
 		Method:      "GET",
 		Accept:      "application/json;charset=UTF-8",
 		ContentType: "application/json;charset=UTF-8",
+		Username:    userName,
+		Password:    password,
 	}
 	log.Println("Query Eureka server using URL: " + requestAction.Url)
 	bytes, err := executeQuery(requestAction)
@@ -137,6 +143,8 @@ func GetServices() ([]Application, error) {
 		Method:      "GET",
 		Accept:      "application/json;charset=UTF-8",
 		ContentType: "application/json;charset=UTF-8",
+		Username:    userName,
+		Password:    password,
 	}
 	log.Println("Query all services URL:" + requestAction.Url)
 	bytes, err := executeQuery(requestAction)
@@ -187,6 +195,8 @@ func heartbeat(appName string, localip string) {
 			Url:         discoveryServerUrl + eurekaPath + appName + "/" + instanceId + "/status?value=UP&lastDirtyTimestamp=" + lastDirtyTimestamp,
 			Method:      "PUT",
 			ContentType: "application/json;charset=UTF-8",
+			Username:    userName,
+			Password:    password,
 		}
 		log.Println("Sending heartbeat to " + heartbeatAction.Url)
 		isDoHttpRequest(heartbeatAction)
@@ -212,6 +222,8 @@ func deregister(appName string) {
 		Url:         discoveryServerUrl + eurekaPath + appName + "/" + instanceId + "/status?value=UP&lastDirtyTimestamp=" + lastDirtyTimestamp,
 		ContentType: "application/json;charset=UTF-8",
 		Method:      "DELETE",
+		Username:    userName,
+		Password:    password,
 	}
 	isDoHttpRequest(deregisterAction)
 	log.Println("Deregistered App: " + appName)
