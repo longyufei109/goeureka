@@ -67,7 +67,6 @@ package goeureka
 		}
 */
 
-
 // http action for request
 type RequestAction struct {
 	Method      string `yaml:"method"`
@@ -78,6 +77,8 @@ type RequestAction struct {
 	ContentType string `yaml:"contentType"`
 	Title       string `yaml:"title"`
 	StoreCookie string `yaml:"storeCookie"`
+	Username    string `yaml:"userName"`
+	Password    string `yaml:"password"`
 }
 
 // Response for /eureka/apps/{appName}
@@ -104,14 +105,14 @@ type Application struct {
 // Instance
 //eg. [{},]
 type Instance struct {
-	InstanceId string `json:"instanceId"`
-	HostName string `json:"hostName"`
-	Port     Port   `json:"port"`
-	App 	string	`json:"app"`
-	IpAddr	string	`json:"ipAddr"`
-	Status	string	`json:"status"`
-	SecurePort SecurePort	`json:"securePort"`
-	LastDirtyTimestamp string `json:"lastDirtyTimestamp"`
+	InstanceId         string     `json:"instanceId"`
+	HostName           string     `json:"hostName"`
+	Port               Port       `json:"port"`
+	App                string     `json:"app"`
+	IpAddr             string     `json:"ipAddr"`
+	Status             string     `json:"status"`
+	SecurePort         SecurePort `json:"securePort"`
+	LastDirtyTimestamp string     `json:"lastDirtyTimestamp"`
 }
 
 // pare port

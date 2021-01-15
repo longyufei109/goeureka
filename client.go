@@ -15,28 +15,25 @@ import (
 	"time"
 )
 
-
 var (
 	instanceId string
-	Vport	   string
+	Vport      string
 	// define eureka path
 	eurekaPath = "/eureka/apps/"
 	// local eureka url
 	discoveryServerUrl = "http://127.0.0.1:8761"
 )
 
-
 // RegisterClient register this app at the Eureka server
 // params: eurekaUrl, eureka server url
 // params: appName define your app name what you want
 // params: port app instance port
 // params: securePort
-func RegisterClient(eurekaUrl string, localip string, appName string, port string, securePort string) {
+func RegisterClient(eurekaUrl string, localip string, appName string, port string, securePort string, username string, pwd string) {
 	eurekaUrl = strings.Trim(eurekaUrl, "/")
 	discoveryServerUrl = eurekaUrl
-	RegisterLocal(appName,localip , port, securePort)
+	RegisterLocal(appName, localip, port, securePort, username, pwd)
 }
-
 
 // RegisterLocal :register your app at the local Eureka server
 // params: port app instance port
@@ -44,10 +41,10 @@ func RegisterClient(eurekaUrl string, localip string, appName string, port strin
 // Register new application instance
 // POST /eureka/v2/apps/appID
 // Input: JSON/XML payload HTTP Code: 204 on success
-func RegisterLocal(appName string, localip string, port string, securePort string) {
+func RegisterLocal(appName string, localip string, port string, securePort string, username string, pwd string) {
 	appName = strings.ToUpper(appName)
 	Vport = port
-	cfg := newConfig(appName,localip ,port,securePort )
+	cfg := newConfig(appName, localip, port, securePort)
 
 	// define Register request
 	registerAction := RequestAction{
@@ -55,6 +52,8 @@ func RegisterLocal(appName string, localip string, port string, securePort strin
 		Method:      "POST",
 		ContentType: "application/json;charset=UTF-8",
 		Body:        cfg,
+		Username:    username,
+		Password:    pwd,
 	}
 	var result bool
 	// loop send heart beat every 5s
@@ -73,7 +72,6 @@ func RegisterLocal(appName string, localip string, port string, securePort strin
 
 }
 
-
 // GetServiceInstances is a function query all instances by appName
 // params: appName
 // Query for all appID instances
@@ -91,7 +89,7 @@ func GetServiceInstances(appName string) ([]Instance, error) {
 	}
 	log.Println("Query Eureka server using URL: " + requestAction.Url)
 	bytes, err := executeQuery(requestAction)
-	if len(bytes) == 0{
+	if len(bytes) == 0 {
 		log.Printf("Query Eureka Response is None")
 		return nil, err
 	}
@@ -101,7 +99,7 @@ func GetServiceInstances(appName string) ([]Instance, error) {
 		//log.Println("Response from Eureka:\n" + string(bytes))
 		err := json.Unmarshal(bytes, &m)
 		if err != nil {
-			log.Printf("Parse JSON Error(%v) from Eureka Server Response" ,err.Error())
+			log.Printf("Parse JSON Error(%v) from Eureka Server Response", err.Error())
 			return nil, err
 		}
 		return m.Application.Instance, nil
@@ -113,18 +111,18 @@ func GetServiceInstances(appName string) ([]Instance, error) {
 //		1. use sendheartbeat
 // 		2. deregister
 // return instanceId, lastDirtyTimestamp
-func GetInfoWithappName(appName string) (string,string, error) {
+func GetInfoWithappName(appName string) (string, string, error) {
 	appName = strings.ToUpper(appName)
 	instances, err := GetServiceInstances(appName)
-	if err != nil{
-		return "","", err
+	if err != nil {
+		return "", "", err
 	}
-	for _, ins := range instances{
-		if ins.App == appName{
-			return ins.InstanceId,ins.LastDirtyTimestamp, nil
+	for _, ins := range instances {
+		if ins.App == appName {
+			return ins.InstanceId, ins.LastDirtyTimestamp, nil
 		}
 	}
-	return "","", err
+	return "", "", err
 }
 
 // GetServices :get all services for eureka
@@ -148,7 +146,7 @@ func GetServices() ([]Application, error) {
 		//log.Println("query all services response from Eureka:\n" + string(bytes))
 		err := json.Unmarshal(bytes, &m)
 		if err != nil {
-			log.Printf("Parse JSON Error(%v) from Eureka Server Response" ,err.Error())
+			log.Printf("Parse JSON Error(%v) from Eureka Server Response", err.Error())
 			return nil, err
 		}
 		return m.Resp.Applications, nil
@@ -171,18 +169,18 @@ func startHeartbeat(appName string, localip string) {
 //* 404 if instanceID doesn’t exist
 func heartbeat(appName string, localip string) {
 	appName = strings.ToUpper(appName)
-	instanceId, lastDirtyTimestamp,err := GetInfoWithappName(appName)
-	if instanceId ==""{
+	instanceId, lastDirtyTimestamp, err := GetInfoWithappName(appName)
+	if instanceId == "" {
 		log.Printf("instanceId is None , Please check at (%v) \n", discoveryServerUrl)
 		return
 	}
-	if err != nil{
+	if err != nil {
 		log.Printf("Can't get instanceId from Eureka server by appName \n")
 		return
 	} else {
-		if localip != ""{
+		if localip != "" {
 			// "127.149.222.221:GOLANG-SERVER:8889"
-			instanceId = localip + ":" +  appName + ":" +  Vport
+			instanceId = localip + ":" + appName + ":" + Vport
 		}
 		heartbeatAction := RequestAction{
 			//http://127.0.0.1:8761/eureka/apps/TORNADO-SERVER/127.0.0.1:tornado-server:3333/status?value=UP&lastDirtyTimestamp=1607321668458
@@ -197,7 +195,7 @@ func heartbeat(appName string, localip string) {
 
 // Sendheartbeat is a test case for heartbeat
 // you can test this function: send a heart beat to eureka server
-func Sendheartbeat(appName string, localip string)  {
+func Sendheartbeat(appName string, localip string) {
 	heartbeat(appName, localip)
 }
 
@@ -207,7 +205,7 @@ func Sendheartbeat(appName string, localip string)  {
 func deregister(appName string) {
 	appName = strings.ToUpper(appName)
 	log.Println("Trying to deregister application " + appName)
-	instanceId,lastDirtyTimestamp, _ := GetInfoWithappName(appName)
+	instanceId, lastDirtyTimestamp, _ := GetInfoWithappName(appName)
 	// cancel registerion
 	deregisterAction := RequestAction{
 		//http://127.0.0.1:8761/eureka/apps/TORNADO-SERVER/127.0.0.1:tornado-server:3333/status?value=UP&lastDirtyTimestamp=1607321668458

@@ -7,6 +7,8 @@ package goeureka
 
 import (
 	"crypto/tls"
+	"encoding/base64"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -56,19 +58,18 @@ func isDoHttpRequest(requestAction RequestAction) bool {
 	return false
 }
 
-
 // newHttpRequest build request for eureka
 func newHttpRequest(requestAction RequestAction) *http.Request {
 	var (
-		err error
+		err     error
 		request *http.Request
 	)
 	//log.Printf("DoHttpRequest URL(%v)",requestAction.Url)
 	// load body and template for request
-	if requestAction.Body != "" {			// add body
+	if requestAction.Body != "" { // add body
 		reader := strings.NewReader(requestAction.Body)
 		request, err = http.NewRequest(requestAction.Method, requestAction.Url, reader)
-	} else if requestAction.Template != "" {		// add template
+	} else if requestAction.Template != "" { // add template
 		reader := strings.NewReader(requestAction.Template)
 		request, err = http.NewRequest(requestAction.Method, requestAction.Url, reader)
 	} else {
@@ -82,6 +83,11 @@ func newHttpRequest(requestAction RequestAction) *http.Request {
 	request.Header = map[string][]string{
 		"Accept":       {requestAction.Accept},
 		"Content-Type": {requestAction.ContentType},
+	}
+	if requestAction.Username != "" && requestAction.Password != "" {
+		request.Header.Set("Authorization", fmt.Sprintf("Basic %s",
+			base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s",
+				requestAction.Username, requestAction.Password)))))
 	}
 	return request
 }
