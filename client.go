@@ -19,7 +19,7 @@ var (
 	instanceId string
 	Vport      string
 	// define eureka path
-	eurekaPath = "/eureka/apps/"
+	eurekaPath = "/apps/"
 	// local eureka url
 	discoveryServerUrl = "http://127.0.0.1:8761"
 	userName           string
